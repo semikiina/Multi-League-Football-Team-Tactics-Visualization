@@ -40,18 +40,6 @@ d3.csv('data/leagues_data.csv').then(function(data) {
             .reorderable()  // make axes dynamically reorderable
             .render()
 
-  // apply weights
-  d3.select('#apply_weights').on('click', function() {
-    // setup weights (unspecified vars given weight = 0)
-    var weights = {
-      'economy (mpg)': d3.select("#buildUpPlaySpeed").property("value"),
-      'cylinders': d3.select("#buildUpPlaySpeedClass").property("value"),
-      'displacement (cc)': d3.select("#buildUpPlayDribbling").property("value"),
-      'power (hp)': d3.select("#buildUpPlayPassing").property("value")
-    };
-
-    ps.weightedSum({ weights: weights }).render();
-  });
 
   // bundling strength slider
   d3.select('#bundling').on('input', function() {
@@ -66,37 +54,6 @@ d3.csv('data/leagues_data.csv').then(function(data) {
   });
 });
 
-// update fuel economy slider and textbox
-function updateEconText(value) {
-  d3.select("#econ_weight_text").property("value", value)  // adjust textbox value to reflect slider input
-}
-function updateEconSlider(value) {
-    d3.select("#econ_weight_slider").property("value", value)  // adjust slider value to reflect textbox input
-}
-
-// update number of cylinders slider and textbox
-function updateCylText(value) {
-  d3.select("#cyl_weight_text").property("value", value)  // adjust textbox value to reflect slider input
-}
-function updateCylSlider(value) {
-    d3.select("#cyl_weight_slider").property("value", value)  // adjust slider value to reflect textbox input
-}
-
-// update displacement slider and textbox
-function updateDisplText(value) {
-  d3.select("#displ_weight_text").property("value", value)  // adjust textbox value to reflect slider input
-}
-function updateDisplSlider(value) {
-    d3.select("#displ_weight_slider").property("value", value)  // adjust slider value to reflect textbox input
-}
-
-// update horsepower slider and textbox
-function updatePowerText(value) {
-  d3.select("#power_weight_text").property("value", value)  // adjust textbox value to reflect slider input
-}
-function updatePowerSlider(value) {
-    d3.select("#power_weight_slider").property("value", value)  // adjust slider value to reflect textbox input
-}
 
 </script>
 
