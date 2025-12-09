@@ -111,6 +111,9 @@ d3.csv("data/leagues_data_filled.csv").then(function (data) {
   let currentSmoothness = 0;
   // current bundling strength (0-1)
   let currentBundling = 0;
+  // Track selected teams to persist across rebuilds
+  let selectedTeamNames = [];
+  let gridInstance = null;
 
   function computeWeightedScores(data) {
     data.forEach((d) => {
@@ -220,6 +223,37 @@ d3.csv("data/leagues_data_filled.csv").then(function (data) {
     if (currentSmoothness > 0 || currentBundling > 0) {
       psLocal.render();
     }
+
+    // Store grid instance and restore selections
+    setTimeout(() => {
+      // Try to get grid instance from the container via jQuery data
+      const $gridContainer = window.$ ? window.$('#grid') : null;
+      if ($gridContainer && $gridContainer.length) {
+        const dataKeys = $gridContainer.data();
+        // Check for grid in jQuery data
+        for (let key in dataKeys) {
+          const val = dataKeys[key];
+          if (val && typeof val === 'object' && val.getSelectedRows) {
+            gridInstance = val;
+            restoreGridSelections();
+            break;
+          }
+        }
+      }
+      // Alternative: look for SlickGrid directly in grid children
+      if (!gridInstance) {
+        const gridDiv = document.getElementById('grid');
+        if (gridDiv && gridDiv.children.length > 0) {
+          for (let child of gridDiv.children) {
+            if (child.slickGrid) {
+              gridInstance = child.slickGrid;
+              restoreGridSelections();
+              break;
+            }
+          }
+        }
+      }
+    }, 150);
 
     setTimeout(reapplyOrdinalLabels, 10);
     currentParasolData = dataForParasol;
@@ -464,8 +498,11 @@ d3.csv("data/leagues_data_filled.csv").then(function (data) {
           x: heatmapAttributes,
           y: yAttrs,
           type: "heatmap",
-          colorscale: "RdBu",
-          zmin: -1,
+          colorscale: [
+  [0, '#7b3294'],    // Purple (negative)
+  [0.5, '#f7f7f7'],  // White (neutral)
+  [1, '#e66101']     // Orange (positive)
+], zmin: -1,
           zmax: 1,
           showscale: true,
           colorbar: { tickvals: [-1, -0.5, 0, 0.5, 1] },
@@ -555,7 +592,7 @@ d3.csv("data/leagues_data_filled.csv").then(function (data) {
     itemDiv.className = "flex flex-row gap-2 items-center py-2";
     const checkbox = document.createElement("input");
     checkbox.type = "checkbox";
-    checkbox.className = "checkbox checkbox-xs";
+    checkbox.className = "checkbox checkbox-xs league-checkbox";
     checkbox.value = league;
     checkbox.checked = selectedLeagues.includes(league);
     checkbox.setAttribute("aria-label", "Select " + league);
@@ -829,7 +866,45 @@ d3.csv("data/leagues_data_filled.csv").then(function (data) {
     rebuildParasolFromSelection();
     renderWeightSliders();
   }
+  function captureGridSelections() {
+    selectedTeamNames = [];
+    if (gridInstance && gridInstance.getSelectedRows) {
+      const selectedRows = gridInstance.getSelectedRows();
+      const dataView = gridInstance.getData();
+      if (dataView && dataView.getItem) {
+        selectedRows.forEach(rowIdx => {
+          const item = dataView.getItem(rowIdx);
+          if (item && item.team_name) {
+            selectedTeamNames.push(item.team_name);
+          }
+        });
+      }
+    }
+  }
+
+  function restoreGridSelections() {
+    if (!gridInstance || selectedTeamNames.length === 0) return;
+    
+    const dataView = gridInstance.getData();
+    if (!dataView || !dataView.getLength) return;
+    
+    const rowsToSelect = [];
+    for (let i = 0; i < dataView.getLength(); i++) {
+      const item = dataView.getItem(i);
+      if (item && selectedTeamNames.includes(item.team_name)) {
+        rowsToSelect.push(i);
+      }
+    }
+    
+    if (rowsToSelect.length > 0 && gridInstance.setSelectedRows) {
+      gridInstance.setSelectedRows(rowsToSelect);
+    }
+  }
+
   function rebuildParasolFromSelection() {
+    // Capture current selections before rebuild
+    captureGridSelections();
+    
     const currentLeagues = Array.isArray(selectedLeagues)
       ? selectedLeagues
       : [];
