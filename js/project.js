@@ -233,7 +233,8 @@ d3.csv("data/leagues_data_filled.csv").then(function (data) {
       let sum = 0,
         totalW = 0;
       for (const [attr, w] of Object.entries(attributeWeights)) {
-        if (d[attr] !== undefined && !isNaN(+d[attr])) {
+        // Only include attributes that are currently selected
+        if (selectedAttributes.includes(attr) && d[attr] !== undefined && !isNaN(+d[attr])) {
           sum += +d[attr] * w;
           totalW += w;
         }
