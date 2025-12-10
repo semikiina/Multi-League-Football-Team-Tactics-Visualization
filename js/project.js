@@ -247,21 +247,21 @@ d3.csv("data/leagues_data_filled.csv").then(function (data) {
     if (!psInstance) return;
     const modeLower = selectedLeagues.length == 1 ? "cluster" : "league";
 
-    const customColors = [
-      '#000000', // Black
-      '#e69f00', // Orange
-      '#56b4e9', // Sky Blue
-      '#009e73', // Green
-      '#f0e442', // Yellow
-      '#0072b2', // Blue
-      '#d55e00', // Vermillion
-      '#cc79a7', // Pink
-      '#666666', // Gray
-      '#cccccc', // Light Gray
-      '#808000', // Olive
-    ];
-
     if (modeLower === "league") {
+
+      const customColors = [
+        '#000000', // Blue
+        '#e69f00', // Yellow
+        '#56b4e9', // Green
+        '#009e73', // Red
+        '#f0e442', // Purple
+        '#0072b2', // Orange
+        '#d55e00', // Brown
+        '#cc79a7', // Pink
+        '#666666', // Gray
+        '#cccccc', // Olive
+        '#808000', // Cyan
+      ];
       const leagueColor = d3
         .scaleOrdinal()
         .domain(leagues)
@@ -269,12 +269,25 @@ d3.csv("data/leagues_data_filled.csv").then(function (data) {
       psInstance.color((d) => leagueColor(d.league_name)).render();
     } else {
       const data = dataForParasol || psInstance.state.data;
-      const clusters = Array.from(new Set(data.map((d) => d.cluster)));
+      const customColors = [
+        '#000000', // Blue
+        '#e69f00', // Yellow
+        '#56b4e9', // Green
+        '#009e73', // Red
+        '#f0e442', // Purple
+        '#0072b2', // Orange
+        '#d55e00', // Brown
+        '#cc79a7', // Pink
+        '#666666', // Gray
+        '#cccccc', // Olive
+        '#808000', // Cyan
+      ];
       const clusterPalette = d3
         .scaleOrdinal()
-        .domain(clusters)
+        .domain(data)
         .range(customColors);
-      psInstance.color((d) => clusterPalette(d.cluster)).render();
+      // Assign cluster index based on row order if not present
+      psInstance.color((d, i) => clusterPalette(i)).render();
     }
   }
 
@@ -320,25 +333,32 @@ d3.csv("data/leagues_data_filled.csv").then(function (data) {
     if (!Array.isArray(dataForParasol)) dataForParasol = [];
     document.querySelector(".parcoords").innerHTML = "";
 
-    // Ensure columns start with selectedAttributes (plus league_name, team_name)
-    const baseCols = ["league_name", "team_name"];
+    // Determine which base columns to include based on number of leagues
+    const uniqueLeagues = Array.from(
+      new Set(dataForParasol.map((d) => d.league_name))
+    );
+    const baseCols = uniqueLeagues.length === 1 
+      ? ["team_name"]  // Only show team names when one league
+      : ["league_name", "team_name"];  // Show both when multiple leagues
+    
     const orderedCols = baseCols.concat(
       selectedAttributes.filter(
         (attr) =>
           !baseCols.includes(attr) &&
+          !["league_name", "team_name"].includes(attr) &&
           dataForParasol.some((d) => d.hasOwnProperty(attr))
       )
     );
-    // Reorder each row to match orderedCols
+    
+    // Reorder each row to match orderedCols (only include columns in orderedCols)
     const reorderedData = dataForParasol.map((row) => {
       const newRow = {};
       orderedCols.forEach((col) => {
         newRow[col] = row[col];
       });
-      // Include any extra keys not in orderedCols
-      Object.keys(row).forEach((col) => {
-        if (!orderedCols.includes(col)) newRow[col] = row[col];
-      });
+      // Include cluster and weightedScore if they exist
+      if (row.cluster !== undefined) newRow.cluster = row.cluster;
+      if (row.weightedScore !== undefined) newRow.weightedScore = row.weightedScore;
       return newRow;
     });
 
@@ -792,12 +812,15 @@ d3.csv("data/leagues_data_filled.csv").then(function (data) {
   }
 
   function selectAllColumns() {
+    selectedAttributes = [];
     document.querySelectorAll("input.column-checkbox").forEach((cb) => {
       cb.checked = true;
+      if (!selectedAttributes.includes(cb.value)) {
+        selectedAttributes.push(cb.value);
+      }
     });
     updateColumnDropdownLabel();
     syncAttributesWithColumns();
-    updateAll();
   }
 
   function clearAllColumns() {
