@@ -184,12 +184,6 @@ d3.csv("data/leagues_data_filled.csv").then(function (data) {
       document.getElementById("graphs").style.display = "";
     }
 
-    // Show/hide curve smoothness and bundling strength controls
-    const smoothDiv = document.getElementById("curve-smoothness-div");
-    const bundlingDiv = document.getElementById("bundling-strength-div");
-    const showAdvanced = selectedLeagues.length > 1;
-    if (smoothDiv) smoothDiv.style.display = showAdvanced ? "" : "none";
-    if (bundlingDiv) bundlingDiv.style.display = showAdvanced ? "" : "none";
     // PCP
     const currentLeagues = Array.isArray(selectedLeagues)
       ? selectedLeagues
@@ -975,8 +969,15 @@ d3.csv("data/leagues_data_filled.csv").then(function (data) {
     heatmapDiv.on("plotly_click", function (data) {
       const point = data.points[0];
       if (point && point.x && point.y) {
-        toggleAttribute(point.x);
-        toggleAttribute(point.y);
+        // Convert display labels back to attribute keys
+        const attrX = Object.keys(attributeTitles).find(
+          (key) => attributeTitles[key] === point.x
+        ) || point.x;
+        const attrY = Object.keys(attributeTitles).find(
+          (key) => attributeTitles[key] === point.y
+        ) || point.y;
+        toggleAttribute(attrX);
+        toggleAttribute(attrY);
       }
     });
     const svgTexts = heatmapDiv.querySelectorAll("text");
