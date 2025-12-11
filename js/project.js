@@ -1,9 +1,4 @@
-// -------------------------------------------
-// -------------------------------------------
-// #region 0. UPDATE ALL GRAPHS & TABLES
-// -------------------------------------------
 
-// #endregion
 // LOAD CSV + BUILD EVERYTHING
 // -------------------------------------------
 d3.csv("data/leagues_data_filled.csv").then(function (data) {
@@ -664,9 +659,7 @@ d3.csv("data/leagues_data_filled.csv").then(function (data) {
   // -------------------------------------------
   const weightDiv = d3
     .select("#weight-sliders")
-    .style("display", "flex")
-    .style("flex-direction", "column")
-    .style("gap", "10px");
+    .attr("class", "grid grid-column-1 gap-2")
 
   function renderWeightSliders() {
     const panel = weightDiv;
@@ -674,6 +667,7 @@ d3.csv("data/leagues_data_filled.csv").then(function (data) {
     if (selectedAttributes.length === 0) {
       panel
         .append("div")
+        .attr("class", "text-xs")
         .text("Select attributes in the heatmap to adjust their weights.");
       return;
     }
@@ -808,9 +802,9 @@ d3.csv("data/leagues_data_filled.csv").then(function (data) {
           y: yLabels,
           type: "heatmap",
           colorscale: [
-            [0, "#56b4e9"], // Purple (negative)
+            [0, "#7b3294"], // Purple (negative)
             [0.5, "#f7f7f7"], // White (neutral)
-            [1, "#e69f00"],
+            [1, "#e66101"],
           ],
           zmin: -1,
           zmax: 1,
@@ -818,7 +812,8 @@ d3.csv("data/leagues_data_filled.csv").then(function (data) {
           colorbar: { tickvals: [-1, -0.5, 0, 0.5, 1] },
           text: textReordered,
           texttemplate: "%{text}",
-          hovertemplate: "<b>%{x}</b> vs <b>%{y}</b><br>Correlation: %{text}<extra></extra>",
+          hovertemplate:
+            "<b>%{x}</b> vs <b>%{y}</b><br>Correlation: %{text}<extra></extra>",
         },
       ],
       {
@@ -979,13 +974,13 @@ d3.csv("data/leagues_data_filled.csv").then(function (data) {
     const labelEl = document.getElementById("column-visibility-dropdown-label");
     if (!labelEl) return;
     if (selectedAttributes.length === heatmapAttributes.length)
-      labelEl.textContent = "All Columns";
+      labelEl.textContent = "All Attributes";
     else if (selectedAttributes.length === 0)
-      labelEl.textContent = "No Columns";
+      labelEl.textContent = "No Attributes";
     else if (selectedAttributes.length === 1)
       labelEl.textContent =
         attributeTitles[selectedAttributes[0]] || selectedAttributes[0];
-    else labelEl.textContent = `${selectedAttributes.length} columns selected`;
+    else labelEl.textContent = `${selectedAttributes.length} attributes selected`;
   }
 
   function singleSelectColumn(colName) {
