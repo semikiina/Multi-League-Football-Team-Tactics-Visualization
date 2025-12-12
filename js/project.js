@@ -1,4 +1,3 @@
-
 // LOAD CSV + BUILD EVERYTHING
 // -------------------------------------------
 d3.csv("data/leagues_data_filled.csv").then(function (data) {
@@ -178,11 +177,10 @@ d3.csv("data/leagues_data_filled.csv").then(function (data) {
       document.getElementById("graphs").style.display = "";
     }
 
-    if(selectedAttributes.length == 0){
+    if (selectedAttributes.length == 0) {
       document.getElementById("parcoords-holder").classList.remove("hidden");
       document.getElementById("p0").classList.add("hidden");
-    }
-    else{
+    } else {
       document.getElementById("parcoords-holder").classList.add("hidden");
       document.getElementById("p0").classList.remove("hidden");
     }
@@ -280,9 +278,9 @@ d3.csv("data/leagues_data_filled.csv").then(function (data) {
       "#808000", // Olive
 
       // Extra color if 12 clusters selected
-      "#cccccc" // Light Gray
+      "#cccccc", // Light Gray
     ];
-    
+
     // If clusters are enabled (k > 0), color by cluster, else by league
     if (currentClusterK > 0) {
       const data = dataForParasol || psInstance.state.data;
@@ -313,6 +311,7 @@ d3.csv("data/leagues_data_filled.csv").then(function (data) {
               Object.keys(attributeTitles).find(
                 (k) => attributeTitles[k] === axisTitle
               ) || axisTitle;
+            dimGroup.attr("data-dimension", axisKey);
           }
           // Set pretty axis label if possible
           if (attributeTitles[axisKey]) {
@@ -341,7 +340,7 @@ d3.csv("data/leagues_data_filled.csv").then(function (data) {
     document.querySelector(".parcoords").innerHTML = "";
 
     // Clear old cluster assignments from filteredData when cluster count changes
-    filteredData.forEach(d => {
+    filteredData.forEach((d) => {
       if (currentClusterK === 0) {
         delete d.cluster;
       }
@@ -373,7 +372,8 @@ d3.csv("data/leagues_data_filled.csv").then(function (data) {
       });
       // Include cluster and weightedScore if they exist
       if (row.cluster !== undefined) newRow.cluster = row.cluster;
-      if (row.weightedScore !== undefined) newRow.weightedScore = row.weightedScore;
+      if (row.weightedScore !== undefined)
+        newRow.weightedScore = row.weightedScore;
       return newRow;
     });
 
@@ -412,7 +412,7 @@ d3.csv("data/leagues_data_filled.csv").then(function (data) {
 
     psLocal = psLocal.render();
     ps = psLocal;
-    
+
     // Apply colors based on selection order
     const customColors = [
       "#56b4e9", // Sky Blue
@@ -427,7 +427,7 @@ d3.csv("data/leagues_data_filled.csv").then(function (data) {
       "#cccccc", // Light Gray
       "#808000", // Olive
     ];
-    
+
     if (currentClusterK > 0) {
       const clusterPalette = d3.scaleOrdinal().range(customColors);
       psLocal.color((d) => clusterPalette(d.cluster)).render();
@@ -439,20 +439,24 @@ d3.csv("data/leagues_data_filled.csv").then(function (data) {
       });
       psLocal.color((d) => colorMap[d.league_name] || customColors[0]).render();
     }
-    
+
     // Sync cluster assignments back to filteredData for table display
     if (currentClusterK > 0 && psLocal.state && psLocal.state.data) {
       psLocal.state.data.forEach((clusteredRow) => {
         const match = filteredData.find(
-          (d) => d.league_name === clusteredRow.league_name && d.team_name === clusteredRow.team_name
+          (d) =>
+            d.league_name === clusteredRow.league_name &&
+            d.team_name === clusteredRow.team_name
         );
         if (match && clusteredRow.cluster !== undefined) {
           match.cluster = clusteredRow.cluster;
         }
-        
+
         // ALSO sync to reorderedData for brush filtering
         const reorderedMatch = reorderedData.find(
-          (d) => d.league_name === clusteredRow.league_name && d.team_name === clusteredRow.team_name
+          (d) =>
+            d.league_name === clusteredRow.league_name &&
+            d.team_name === clusteredRow.team_name
         );
         if (reorderedMatch && clusteredRow.cluster !== undefined) {
           reorderedMatch.cluster = clusteredRow.cluster;
@@ -498,78 +502,83 @@ d3.csv("data/leagues_data_filled.csv").then(function (data) {
     }
 
     setTimeout(reapplyOrdinalLabels, 10);
-    
+
     // Apply coloring AFTER all render() calls to prevent colors from being reset
     applyColoring(psLocal, reorderedData);
     psLocal.render();
 
     // Enable brushing
-    if (typeof psLocal.brushable === 'function') {
+    if (typeof psLocal.brushable === "function") {
       psLocal.brushable();
     }
 
     // Set up MutationObserver to watch for brush changes and update table
     setTimeout(() => {
-      const parcoords = document.querySelector('.parcoords');
+      const parcoords = document.querySelector(".parcoords");
       if (!parcoords) return;
-      
+
       let updateTimeout = null;
       const cachedBrushData = {};
-      
+
       const updateTableFromBrush = () => {
-        const brushFilters = Object.values(cachedBrushData).filter(b => b.active);
-        
+        const brushFilters = Object.values(cachedBrushData).filter(
+          (b) => b.active
+        );
+
         if (brushFilters.length > 0 && ps && ps.charts && ps.charts[0]) {
           const dimensions = ps.charts[0].state.dimensions;
           if (!dimensions) return;
-          
-          const filteredData = reorderedData.filter(row => {
-            return brushFilters.every(filter => {
+
+          const filteredData = reorderedData.filter((row) => {
+            return brushFilters.every((filter) => {
               const attrValue = row[filter.attribute];
               const dim = dimensions[filter.attribute];
-              
+
               if (dim && dim.yscale) {
                 const pixelPos = dim.yscale(attrValue);
-                const match = pixelPos >= filter.yExtent[0] && pixelPos <= filter.yExtent[1];
+                const match =
+                  pixelPos >= filter.yExtent[0] &&
+                  pixelPos <= filter.yExtent[1];
                 return match;
               }
               return true;
             });
           });
-          
+
           renderCustomTable(filteredData);
         } else {
           renderCustomTable(reorderedData);
         }
       };
-      
+
       const observer = new MutationObserver((mutations) => {
-        mutations.forEach(mutation => {
+        mutations.forEach((mutation) => {
           const target = mutation.target;
-          
-          if (!target.classList || !target.classList.contains('selection')) {
+
+          if (!target.classList || !target.classList.contains("selection")) {
             return;
           }
-          
-          const dimElement = target.closest('.dimension');
+
+          const dimElement = target.closest(".dimension");
           if (dimElement) {
-            const label = dimElement.querySelector('.label');
-            const dimLabel = label ? label.textContent.trim() : '';
-            let attrKey = Object.keys(attributeTitles).find(
-              k => attributeTitles[k] === dimLabel
-            ) || dimLabel;
-            
-            const isActive = target.style.display !== 'none';
-            
+            const label = dimElement.querySelector(".label");
+            const dimLabel = label ? label.textContent.trim() : "";
+            let attrKey =
+              Object.keys(attributeTitles).find(
+                (k) => attributeTitles[k] === dimLabel
+              ) || dimLabel;
+
+            const isActive = target.style.display !== "none";
+
             if (isActive) {
-              const y = parseFloat(target.getAttribute('y'));
-              const height = parseFloat(target.getAttribute('height'));
-              
+              const y = parseFloat(target.getAttribute("y"));
+              const height = parseFloat(target.getAttribute("height"));
+
               if (!isNaN(y) && !isNaN(height)) {
                 cachedBrushData[attrKey] = {
                   attribute: attrKey,
                   yExtent: [y, y + height],
-                  active: true
+                  active: true,
                 };
               }
             } else {
@@ -579,16 +588,16 @@ d3.csv("data/leagues_data_filled.csv").then(function (data) {
             }
           }
         });
-        
+
         if (updateTimeout) clearTimeout(updateTimeout);
         updateTimeout = setTimeout(updateTableFromBrush, 0);
       });
-      
+
       observer.observe(parcoords, {
         attributes: true,
-        attributeFilter: ['y', 'height', 'style'],
+        attributeFilter: ["y", "height", "style"],
         subtree: true,
-        childList: true
+        childList: true,
       });
     }, 300);
 
@@ -620,32 +629,36 @@ d3.csv("data/leagues_data_filled.csv").then(function (data) {
       reapplyOrdinalLabels();
       restoreBrushes();
     });
-    
+
     // Function to restore brush extents after render
     function restoreBrushes() {
       if (!cachedBrushData || Object.keys(cachedBrushData).length === 0) return;
-      
+
       setTimeout(() => {
         Object.entries(cachedBrushData).forEach(([attrKey, brushData]) => {
           if (!brushData.active) return;
-          
+
           // Find the dimension element for this attribute
-          d3.selectAll('.parcoords .dimension').each(function() {
+          d3.selectAll(".parcoords .dimension").each(function () {
             const dimGroup = d3.select(this);
-            const label = dimGroup.select('.label');
-            const dimLabel = label ? label.text() : '';
-            const currentAttrKey = Object.keys(attributeTitles).find(
-              k => attributeTitles[k] === dimLabel
-            ) || dimLabel;
-            
+            const label = dimGroup.select(".label");
+            const dimLabel = label ? label.text() : "";
+            const currentAttrKey =
+              Object.keys(attributeTitles).find(
+                (k) => attributeTitles[k] === dimLabel
+              ) || dimLabel;
+
             if (currentAttrKey === attrKey) {
               // Restore the brush extent
-              const brushGroup = dimGroup.select('.brush');
+              const brushGroup = dimGroup.select(".brush");
               if (!brushGroup.empty() && brushGroup.node().__brush) {
                 const brush = brushGroup.node().__brush;
-                
+
                 // Set the extent - this should trigger Parasol's brush handler
-                const extent = [[0, brushData.yExtent[0]], [0, brushData.yExtent[1]]];
+                const extent = [
+                  [0, brushData.yExtent[0]],
+                  [0, brushData.yExtent[1]],
+                ];
                 brushGroup.call(brush.move, extent);
               }
             }
@@ -668,7 +681,7 @@ d3.csv("data/leagues_data_filled.csv").then(function (data) {
   // -------------------------------------------
   const weightDiv = d3
     .select("#weight-sliders")
-    .attr("class", "grid grid-column-1 gap-2")
+    .attr("class", "grid grid-column-1 gap-2");
 
   function renderWeightSliders() {
     const panel = weightDiv;
@@ -731,16 +744,7 @@ d3.csv("data/leagues_data_filled.csv").then(function (data) {
     const selected = Array.isArray(leagueSelection)
       ? leagueSelection
       : [leagueSelection];
-    if (selected.length === 0) {
-      try {
-        Plotly.purge("heatmap");
-      } catch (e) {}
-      const hm = document.getElementById("heatmap");
-      if (hm)
-        hm.innerHTML =
-          '<div style="padding:8px;color:#555;">No leagues selected.</div>';
-      return;
-    }
+
     const hm = document.getElementById("heatmap");
     if (hm) hm.innerHTML = "";
     const useAll = selected.includes("All Leagues");
@@ -802,6 +806,11 @@ d3.csv("data/leagues_data_filled.csv").then(function (data) {
     const xLabels = attrs.map((a) => attributeTitles[a] || a);
     const yLabels = yAttrs.map((a) => attributeTitles[a] || a);
 
+     const isMobile =
+       /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(
+         navigator.userAgent
+       ) || window.innerWidth < 800;
+
     Plotly.newPlot(
       "heatmap",
       [
@@ -826,10 +835,12 @@ d3.csv("data/leagues_data_filled.csv").then(function (data) {
         },
       ],
       {
-        width: null,
-        height: "100%",
         autosize: true,
-        margin: { r: 200, t: 20, b: 150 },
+        margin: {
+          t: 0,
+          b: 0,
+          r: selectedAttributes.length > 1 && !isMobile ? 150 : 0,
+        },
         xaxis: { automargin: true, tickfont: { size: 9 }, tickangle: -30 },
         yaxis: { automargin: true, tickfont: { size: 9 } },
       },
@@ -989,7 +1000,8 @@ d3.csv("data/leagues_data_filled.csv").then(function (data) {
     else if (selectedAttributes.length === 1)
       labelEl.textContent =
         attributeTitles[selectedAttributes[0]] || selectedAttributes[0];
-    else labelEl.textContent = `${selectedAttributes.length} attributes selected`;
+    else
+      labelEl.textContent = `${selectedAttributes.length} attributes selected`;
   }
 
   function singleSelectColumn(colName) {
@@ -1404,31 +1416,31 @@ d3.csv("data/leagues_data_filled.csv").then(function (data) {
       selectAllCheckbox.type = "checkbox";
       selectAllCheckbox.className = "checkbox checkbox-xs";
       selectAllCheckbox.title = "Select/Deselect All";
-      
+
       // Check if all currently visible rows are selected
-      const allSelected = filteredRows.every(row => selectedRows.has(getRowId(row)));
+      const allSelected = filteredRows.every((row) =>
+        selectedRows.has(getRowId(row))
+      );
       selectAllCheckbox.checked = allSelected && filteredRows.length > 0;
-      
-      selectAllCheckbox.addEventListener("change", function() {
+
+      selectAllCheckbox.addEventListener("change", function () {
         if (this.checked) {
           // Select all visible rows
-          filteredRows.forEach(row => {
+          filteredRows.forEach((row) => {
             selectedRows.add(getRowId(row));
           });
         } else {
           // Deselect all visible rows
-          filteredRows.forEach(row => {
+          filteredRows.forEach((row) => {
             selectedRows.delete(getRowId(row));
           });
         }
         renderTable();
         updatePagination();
-        
+
         // Update PCP highlighting
         if (ps && typeof ps.highlight === "function") {
-          const selected = data.filter((r) =>
-            selectedRows.has(getRowId(r))
-          );
+          const selected = data.filter((r) => selectedRows.has(getRowId(r)));
           if (selected.length > 0) {
             ps.highlight(selected);
           } else {
@@ -1436,7 +1448,7 @@ d3.csv("data/leagues_data_filled.csv").then(function (data) {
           }
         }
       });
-      
+
       selectTh2.appendChild(selectAllCheckbox);
       headerRow.appendChild(selectTh2);
 
@@ -1479,9 +1491,9 @@ d3.csv("data/leagues_data_filled.csv").then(function (data) {
       for (let i = startIdx; i < endIdx; i++) {
         const row = filteredRows[i];
         const tr = document.createElement("tr");
-        
+
         // Add hover effect
-        tr.addEventListener("mouseenter", function() {
+        tr.addEventListener("mouseenter", function () {
           if (!selectedRows.has(getRowId(row))) {
             tr.classList.add("hover:bg-base-200");
             tr.style.backgroundColor = "#f3f4f6";
@@ -1489,9 +1501,7 @@ d3.csv("data/leagues_data_filled.csv").then(function (data) {
           // Highlight the corresponding line in PCP along with selected rows
           if (ps && typeof ps.highlight === "function") {
             // Find ALL selected rows from the full dataset, not just filteredRows
-            const selected = data.filter((r) =>
-              selectedRows.has(getRowId(r))
-            );
+            const selected = data.filter((r) => selectedRows.has(getRowId(r)));
             // Highlight both the hovered row and any selected rows
             const toHighlight = [...selected];
             if (!selectedRows.has(getRowId(row))) {
@@ -1500,7 +1510,7 @@ d3.csv("data/leagues_data_filled.csv").then(function (data) {
             ps.highlight(toHighlight);
           }
         });
-        tr.addEventListener("mouseleave", function() {
+        tr.addEventListener("mouseleave", function () {
           if (!selectedRows.has(getRowId(row))) {
             tr.classList.remove("hover:bg-base-200");
             tr.style.backgroundColor = "";
@@ -1508,9 +1518,7 @@ d3.csv("data/leagues_data_filled.csv").then(function (data) {
           // Restore highlighting to selected rows or clear if none selected
           if (ps && typeof ps.unhighlight === "function") {
             // Find ALL selected rows from the full dataset, not just filteredRows
-            const selected = data.filter((r) =>
-              selectedRows.has(getRowId(r))
-            );
+            const selected = data.filter((r) => selectedRows.has(getRowId(r)));
             if (selected.length > 0) {
               ps.highlight(selected);
             } else {
@@ -1519,7 +1527,7 @@ d3.csv("data/leagues_data_filled.csv").then(function (data) {
             }
           }
         });
-        
+
         // Selection checkbox
         const tdSelect = document.createElement("td");
         tdSelect.className = "text-center border border-base-300";
@@ -1540,9 +1548,7 @@ d3.csv("data/leagues_data_filled.csv").then(function (data) {
           // Highlight all selected rows in Parasol
           if (ps && typeof ps.highlight === "function") {
             // Find ALL selected rows from the full dataset, not just filteredRows
-            const selected = data.filter((r) =>
-              selectedRows.has(getRowId(r))
-            );
+            const selected = data.filter((r) => selectedRows.has(getRowId(r)));
             if (selected.length == 0) {
               const canvas = document.querySelector(".foreground");
               if (canvas) {
