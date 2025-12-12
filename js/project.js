@@ -837,7 +837,7 @@ d3.csv("data/leagues_data_filled.csv").then(function (data) {
       {
         autosize: true,
         margin: {
-          t: 0,
+          t: 10,
           b: 0,
           r: selectedAttributes.length > 1 && !isMobile ? 150 : 0,
         },
